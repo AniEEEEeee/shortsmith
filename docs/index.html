@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Shortsmith</title>
+<meta name="description" content="Shortsmith turns long YouTube, Twitch and podcast videos into vertical shorts with smart 9:16 reframing and word-perfect animated captions. A Windows app that runs on your own PC.">
+<link rel="canonical" href="https://shortsmith.lol/">
+<meta name="theme-color" content="#0b0a10">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://shortsmith.lol/">
+<meta property="og:title" content="Shortsmith: long videos in, viral shorts out">
+<meta property="og:description" content="Shortsmith turns long YouTube, Twitch and podcast videos into vertical shorts with smart 9:16 reframing and word-perfect animated captions. A Windows app that runs on your own PC.">
+<meta property="og:image" content="https://shortsmith.lol/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shortsmith: long videos in, viral shorts out">
+<meta name="twitter:description" content="Shortsmith turns long YouTube, Twitch and podcast videos into vertical shorts with smart 9:16 reframing and word-perfect animated captions. A Windows app that runs on your own PC.">
+<meta name="twitter:image" content="https://shortsmith.lol/og.png">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; } img { max-width: 100%; } [hidden] { display: none !important; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Montserrat:wght@800;900&family=Anton&family=Bangers&family=Lilita+One&family=Bebas+Neue&family=Poppins:wght@800&family=Luckiest+Guy&family=Permanent+Marker&family=Archivo+Black&family=Rubik:wght@800&display=swap">
+<style>
+/* Layout concept: an editing suite. A long horizontal source timeline feeds vertical 9:16 frames;
+   left-aligned type on a wide grid, monospace timecodes as wayfinding, one gradient used sparingly. */
+:root {
+  --bg: #0b0a10;
+  --bg-2: #111019;
+  --panel: #17151f;
+  --panel-2: #1e1b29;
+  --line: rgba(236, 230, 255, 0.09);
+  --line-2: rgba(236, 230, 255, 0.16);
+  --fg: #f4f2fa;
+  --muted: #a7a2b8;
+  --faint: #716c84;
+  --violet: #8b5cf6;
+  --magenta: #d946ef;
+  --pink: #ec4899;
+  --flame: #fb923c;
+  --cap: #ffe135;
+  --ok: #34d399;
+  --grad: linear-gradient(120deg, #8b5cf6 0%, #d946ef 52%, #ec4899 100%);
+  --f-display: "Archivo", "Arial Narrow", "Segoe UI", sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  --wrap: 1180px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 16px; line-height: 1.6;
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--bg); }
+a { color: inherit; }
+::selection { background: rgba(139, 92, 246, .45); }
+:focus-visible { outline: 2px solid var(--magenta); outline-offset: 3px; border-radius: 6px; }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); display: flex; align-items: center; gap: 10px; }
+.eyebrow b { color: var(--magenta); font-weight: 700; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+h2 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.02; font-weight: 850; font-stretch: 112%; }
+h3 { font-size: 20px; font-weight: 750; font-stretch: 105%; line-height: 1.2; }
+p { margin: 0; }
+.lede { color: var(--muted); font-size: 18px; max-width: 58ch; }
+.grad-text { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 22px; border-radius: 12px; font-weight: 650; font-size: 15px; text-decoration: none;
+  border: 1px solid var(--line-2); background: var(--panel); color: var(--fg); cursor: pointer; transition: transform .15s, background .2s, border-color .2s, box-shadow .2s; font-family: var(--f-body); }
+.btn:hover { background: var(--panel-2); border-color: rgba(236,230,255,.26); }
+.btn:active { transform: scale(.98); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn.primary { background: var(--grad); border: 0; color: #fff; box-shadow: 0 10px 34px -12px rgba(217, 70, 239, .8), inset 0 1px 0 rgba(255,255,255,.22); }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.small { height: 38px; padding: 0 14px; font-size: 13.5px; border-radius: 10px; }
+.btn[aria-disabled="true"] { opacity: .55; cursor: default; filter: none; }
+
+/* ───────── nav ───────── */
+.nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 50; background: rgba(11, 10, 16, .78); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+.nav .wrap { display: flex; align-items: center; gap: 28px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-stretch: 108%; font-size: 18px; text-decoration: none; }
+.brand svg { width: 28px; height: 28px; }
+.nav nav { display: flex; gap: 22px; margin-left: 8px; }
+.nav nav a { text-decoration: none; color: var(--muted); font-size: 14px; font-weight: 550; }
+.nav nav a:hover { color: var(--fg); }
+.nav .cta { margin-left: auto; }
+
+/* ───────── hero ───────── */
+.hero { position: relative; padding-block: 72px 56px; overflow: hidden; }
+.hero::before { content: ""; position: absolute; width: 900px; height: 600px; right: -260px; top: -200px; background: radial-gradient(closest-side, rgba(139, 92, 246, .22), transparent 70%); pointer-events: none; }
+.hero::after { content: ""; position: absolute; width: 700px; height: 500px; left: -300px; bottom: -260px; background: radial-gradient(closest-side, rgba(236, 72, 153, .12), transparent 70%); pointer-events: none; }
+.hero .wrap { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+.hero h1 { font-size: clamp(44px, 6.4vw, 84px); line-height: .94; font-weight: 900; font-stretch: 118%; letter-spacing: -.025em; margin: 20px 0 22px; }
+.hero h1 .out { display: block; font-stretch: 62%; font-weight: 900; letter-spacing: 0; text-transform: uppercase; font-size: 1.08em; line-height: .92; }
+.hero .lede { margin-bottom: 30px; }
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.hero-meta { margin-top: 22px; display: flex; gap: 8px 18px; flex-wrap: wrap; color: var(--faint); font-family: var(--f-mono); font-size: 12px; }
+.hero-meta span { display: inline-flex; align-items: center; gap: 7px; }
+.hero-meta span::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--violet); }
+
+/* timeline → phones machine */
+.machine { position: relative; min-width: 0; }
+.source { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 14px 14px 12px; box-shadow: 0 30px 60px -30px rgba(0,0,0,.8); }
+.source-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: var(--f-mono); font-size: 11.5px; color: var(--faint); margin-bottom: 10px; }
+.source-h .t { color: var(--fg); font-family: var(--f-body); font-weight: 650; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.track { position: relative; height: 64px; border-radius: 10px; background: var(--bg-2); overflow: hidden; }
+.track canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.seg { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: rgba(217, 70, 239, .16); box-shadow: inset 0 0 0 1.5px var(--c); }
+.seg span { position: absolute; top: 4px; left: 4px; font-family: var(--f-mono); font-size: 10px; font-weight: 700; background: var(--c); color: #160b1f; padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+.playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; box-shadow: 0 0 12px rgba(255,255,255,.7); left: 0; animation: sweep 9s linear infinite; }
+@keyframes sweep { from { left: 0; } to { left: 100%; } }
+.ticks { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 10.5px; color: var(--faint); margin-top: 7px; }
+.phones { display: flex; justify-content: center; gap: 16px; margin-top: 18px; align-items: flex-end; }
+.phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1 1 0; min-width: 0; max-width: 200px; }
+.phone-wrap:nth-child(2) { transform: translateY(-14px); }
+.phone-wrap .lab { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.phone-wrap .lab i { width: 8px; height: 8px; border-radius: 2px; background: var(--c); display: inline-block; }
+
+.phone { position: relative; width: 100%; max-width: 100%; aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden; background: #000;
+  box-shadow: 0 0 0 5px #1b1924, 0 0 0 6px rgba(255,255,255,.08), 0 26px 50px -18px rgba(0,0,0,.9); }
+.phone .scene { position: absolute; inset: 0; }
+.phone .scene svg { position: absolute; left: 50%; bottom: 0; width: 92%; transform: translateX(-50%); }
+.phone .notch { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 30%; height: 14px; border-radius: 10px; background: #000; z-index: 3; }
+.phone .score { position: absolute; top: 26px; left: 8px; z-index: 3; display: flex; align-items: center; gap: 3px; font-family: var(--f-mono); font-size: 10.5px; font-weight: 700;
+  background: rgba(10,10,14,.65); backdrop-filter: blur(6px); padding: 2px 7px 2px 5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.15); }
+.phone .score svg { width: 11px; height: 11px; color: var(--flame); }
+.cap-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.cap-line { position: absolute; left: 6%; right: 6%; transform: translateY(-50%); text-align: center; line-height: 1.1; word-break: break-word; }
+.cap-line .w { display: inline-block; }
+@keyframes capPop { from { transform: translateY(-50%) scale(.78); } to { transform: translateY(-50%) scale(1); } }
+@keyframes capBounce { 0% { transform: translateY(-50%) scale(.55); } 55% { transform: translateY(-50%) scale(1.12); } 100% { transform: translateY(-50%) scale(1); } }
+@keyframes capFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes capSlide { from { opacity: 0; transform: translateY(calc(-50% + 8px)); } to { opacity: 1; transform: translateY(-50%); } }
+
+/* ───────── sections ───────── */
+section { padding-block: 96px; }
+.sec-head { display: grid; gap: 16px; margin-bottom: 48px; max-width: 760px; }
+.band { background: var(--bg-2); border-block: 1px solid var(--line); }
+
+/* pipeline */
+.pipe { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--panel); }
+.step { padding: 26px 24px 28px; border-right: 1px solid var(--line); display: grid; gap: 12px; align-content: start; min-width: 0; position: relative; }
+.step:last-child { border-right: 0; }
+.step .tc { font-family: var(--f-mono); font-size: 12px; color: var(--magenta); font-weight: 700; }
+.step .ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: rgba(139, 92, 246, .14); color: #d6c8ff; border: 1px solid rgba(139, 92, 246, .3); }
+.step .ic svg { width: 20px; height: 20px; }
+.step p { color: var(--muted); font-size: 14.5px; }
+.step .bar { height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; margin-top: 4px; }
+.step .bar i { display: block; height: 100%; width: 100%; background: var(--grad); transform-origin: left; animation: fill 6s ease-in-out infinite; animation-delay: calc(var(--i) * 1.2s); }
+@keyframes fill { 0% { transform: scaleX(0); } 30%, 100% { transform: scaleX(1); } }
+
+/* moments */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; }
+.signals { display: grid; gap: 14px; margin-top: 28px; }
+.signal { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 14px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 14px; }
+.signal b { font-family: var(--f-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--fg); }
+.signal span { color: var(--muted); font-size: 14.5px; }
+.clips-card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 8px; box-shadow: 0 30px 60px -30px rgba(0,0,0,.9); }
+.clip-row { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px; border-radius: 12px; }
+.clip-row + .clip-row { border-top: 1px solid var(--line); border-radius: 0 0 12px 12px; }
+.clip-row:hover { background: var(--panel-2); }
+.mini-phone { width: 52px; aspect-ratio: 9/16; border-radius: 8px; background: var(--mp); position: relative; overflow: hidden; }
+.mini-phone::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 26%; height: 5px; border-radius: 3px; background: var(--cap); box-shadow: 0 -8px 0 rgba(255,255,255,.85); }
+.clip-row .ti { font-weight: 650; font-size: 14.5px; line-height: 1.35; }
+.clip-row .why { color: var(--faint); font-size: 12.5px; margin-top: 3px; }
+.clip-row .tc { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+.flame { display: inline-flex; align-items: center; gap: 4px; font-family: var(--f-mono); font-weight: 700; font-size: 14px; padding: 5px 10px 5px 8px; border-radius: 999px; background: rgba(251, 146, 60, .12); color: #fdba74; border: 1px solid rgba(251, 146, 60, .25); }
+.flame svg { width: 14px; height: 14px; }
+.flame.hot { background: var(--grad); color: #fff; border-color: transparent; }
+
+/* caption studio */
+.studio { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 48px; align-items: center; }
+.studio .phone { max-width: 300px; margin: 0 auto; }
+.styles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.style-btn { height: 78px; border-radius: 14px; border: 1px solid var(--line); background: #0c0b11; color: var(--fg); cursor: pointer; display: grid; place-items: center; align-content: center; gap: 6px; transition: border-color .2s, transform .2s, box-shadow .2s; padding: 6px; min-width: 0; }
+.style-btn:hover { border-color: var(--line-2); transform: translateY(-2px); }
+.style-btn[aria-pressed="true"] { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(139, 92, 246, .28); }
+.style-btn .sample { font-size: 21px; line-height: 1; white-space: nowrap; }
+.style-btn .nm { font-size: 11px; color: var(--faint); font-weight: 600; }
+.studio-meta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; background: var(--panel); }
+
+/* reframe */
+.modes { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); margin-bottom: 18px; }
+.modes button { border: 0; background: transparent; color: var(--muted); font-weight: 650; font-size: 13.5px; padding: 8px 14px; border-radius: 9px; cursor: pointer; font-family: var(--f-body); }
+.modes button[aria-pressed="true"] { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line-2); }
+.frame16 { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #1d1630, #0d0c14 60%, #2b1124); border: 1px solid var(--line); }
+.frame16 .person { position: absolute; bottom: 0; width: 30%; }
+.frame16 .person.a { left: 16%; }
+.frame16 .person.b { left: 56%; }
+.crop { position: absolute; top: 0; bottom: 0; width: 31.6%; border: 2px solid #fff; border-radius: 6px; box-shadow: 0 0 0 999px rgba(5, 4, 8, .62); transition: left .9s cubic-bezier(.4,.1,.2,1), width .6s, opacity .4s; left: 15%; }
+.crop.track { animation: follow 7s ease-in-out infinite; }
+@keyframes follow { 0%, 38% { left: 15.3%; } 50%, 88% { left: 55.3%; } 100% { left: 15.3%; } }
+.crop.split { width: 31.6%; }
+.facebox { position: absolute; border: 1.5px dashed rgba(52, 211, 153, .9); border-radius: 4px; width: 11.4%; aspect-ratio: 1; top: 50.4%; }
+.out916 { display: flex; gap: 16px; margin-top: 18px; align-items: center; }
+.out916 .phone { width: 128px; flex: none; border-radius: 16px; }
+.out916 p { color: var(--muted); font-size: 14.5px; min-width: 0; }
+.split-view { position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr; }
+.split-view div { position: relative; overflow: hidden; border-bottom: 2px solid #0b0a10; }
+.fit-view { position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* discover */
+.disc-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; margin-bottom: 30px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+.chip { font-size: 13px; font-weight: 600; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); background: var(--panel); white-space: nowrap; }
+.chip.on { background: var(--fg); color: #111; border-color: var(--fg); }
+.vgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 18px; }
+.vcard { min-width: 0; }
+.thumb { position: relative; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; background: var(--tb); border: 1px solid var(--line); }
+.thumb .big { position: absolute; left: 8%; bottom: 14%; font-family: "Anton", "Archivo", sans-serif; font-size: clamp(20px, 2.4vw, 30px); line-height: .95; text-transform: uppercase; color: #fff; text-shadow: 0 3px 0 rgba(0,0,0,.45); max-width: 70%; }
+.thumb .big em { font-style: normal; color: var(--cap); }
+.thumb .who { position: absolute; right: 6%; bottom: 0; width: 38%; }
+.thumb .dur { position: absolute; right: 6px; bottom: 6px; font-family: var(--f-mono); font-size: 11px; background: rgba(0,0,0,.78); padding: 1px 6px; border-radius: 5px; z-index: 2; }
+.thumb .sc { position: absolute; left: 7px; top: 7px; display: flex; align-items: center; gap: 3px; font-family: var(--f-mono); font-size: 11px; font-weight: 700; background: var(--grad); padding: 2px 7px 2px 5px; border-radius: 999px; }
+.thumb .sc svg { width: 11px; height: 11px; }
+.vcard .tt { font-weight: 650; font-size: 14px; line-height: 1.35; margin-top: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.vcard .ch { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+.vcard .meta { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.vcard .meta span { font-size: 10.5px; font-weight: 650; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,.05); color: var(--faint); border: 1px solid var(--line); }
+.vcard .meta span.m { color: #fdba74; background: rgba(251,146,60,.08); border-color: rgba(251,146,60,.22); }
+.formula { margin-top: 36px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.formula div { padding: 18px 18px 20px; border-right: 1px solid var(--line); min-width: 0; }
+.formula div:last-child { border-right: 0; }
+.formula b { display: block; font-family: var(--f-mono); font-size: 22px; font-weight: 700; }
+.formula span { color: var(--muted); font-size: 13px; }
+
+/* extras */
+.extras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px 48px; }
+.extra { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 4px 14px; }
+.extra svg { width: 22px; height: 22px; color: var(--magenta); margin-top: 2px; }
+.extra h3 { font-size: 16.5px; font-family: var(--f-body); font-weight: 700; letter-spacing: 0; }
+.extra p { grid-column: 2; color: var(--muted); font-size: 14.5px; }
+
+/* specs + faq */
+.specs { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.specs th { text-align: left; font-weight: 600; color: var(--muted); width: 34%; padding: 13px 16px 13px 0; vertical-align: top; font-size: 13.5px; }
+.specs td { padding: 13px 0; color: var(--fg); }
+.specs tr + tr th, .specs tr + tr td { border-top: 1px solid var(--line); }
+.specs code { font-family: var(--f-mono); font-size: 13px; color: #e9d5ff; }
+.faq details { border-top: 1px solid var(--line); padding: 18px 0; }
+.faq details:last-child { border-bottom: 1px solid var(--line); }
+.faq summary { cursor: pointer; font-weight: 650; font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--f-mono); color: var(--faint); font-size: 18px; line-height: 1; transition: transform .2s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { color: var(--muted); margin-top: 10px; font-size: 15px; max-width: 65ch; }
+
+/* final cta */
+.final { position: relative; overflow: hidden; }
+.final-card { position: relative; border-radius: 26px; padding: 64px 56px; background: var(--panel); border: 1px solid var(--line); overflow: hidden; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.final-card::before { content: ""; position: absolute; inset: -1px; background: radial-gradient(60% 120% at 100% 0%, rgba(217, 70, 239, .22), transparent 60%), radial-gradient(50% 80% at 0% 100%, rgba(139, 92, 246, .18), transparent 60%); pointer-events: none; }
+.final-card > * { position: relative; }
+.final h2 { font-size: clamp(32px, 4.8vw, 58px); }
+.dl { display: grid; gap: 12px; justify-items: start; }
+.dl .file { font-family: var(--f-mono); font-size: 12.5px; color: var(--faint); }
+.dl .note { font-size: 13px; color: var(--muted); max-width: 40ch; }
+
+footer { padding-block: 40px 56px; color: var(--faint); font-size: 13px; border-top: 1px solid var(--line); }
+footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* responsive */
+@media (max-width: 1020px) {
+  .hero .wrap, .split, .studio, .final-card { grid-template-columns: minmax(0, 1fr); }
+  .studio .phone { max-width: 240px; }
+  .pipe { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .step:nth-child(2) { border-right: 0; }
+  .step:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  .vgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .extras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formula { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formula div { border-bottom: 1px solid var(--line); }
+  .nav nav { display: none; }
+}
+@media (max-width: 620px) {
+  section { padding-block: 64px; }
+  .hero { padding-block: 44px 40px; }
+  .pipe, .extras, .vgrid { grid-template-columns: minmax(0, 1fr); }
+  .step { border-right: 0; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: 0; }
+  .styles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .phones { gap: 10px; }
+  .phone-wrap:nth-child(2) { transform: none; }
+  .signal { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .final-card { padding: 36px 22px; }
+  .formula { grid-template-columns: minmax(0, 1fr); }
+  .formula div { border-right: 0; }
+  .nav .cta .lbl-long { display: none; }
+  .specs th { width: 40%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8B5CF6"/><stop offset=".55" stop-color="#D946EF"/><stop offset="1" stop-color="#EC4899"/></linearGradient>
+    <symbol id="logo" viewBox="0 0 64 64"><rect x="2" y="2" width="60" height="60" rx="17" fill="url(#g)"/><rect x="19" y="12" width="26" height="40" rx="7" fill="#fff"/><path d="M28 24.2v15.6c0 .9 1 1.5 1.8 1l11.6-7.8c.7-.5.7-1.5 0-2l-11.6-7.8c-.8-.5-1.8.1-1.8 1z" fill="url(#g)"/><path d="M51 6.5l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" fill="#fff"/></symbol>
+    <symbol id="flame" viewBox="0 0 24 24"><path fill="currentColor" d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+    <symbol id="win" viewBox="0 0 24 24"><path fill="currentColor" d="M3 5.1 10.4 4v7.3H3V5.1zm8.3-1.2L21 2.5v8.8h-9.7V3.9zM3 12.6h7.4V20L3 18.9v-6.3zm8.3 0H21v8.9l-9.7-1.4v-7.5z"/></symbol>
+    <!-- speaker silhouette: head, shoulders, headphones, mic -->
+    <symbol id="host" viewBox="0 0 200 220"><g fill="#07060b"><circle cx="100" cy="72" r="38"/><path d="M28 220c0-52 30-86 72-86s72 34 72 86z"/><rect x="58" y="60" width="12" height="34" rx="6"/><rect x="130" y="60" width="12" height="34" rx="6"/><path d="M62 70a38 40 0 0 1 76 0" fill="none" stroke="#07060b" stroke-width="7"/></g><g fill="#1b1826"><rect x="128" y="120" width="16" height="34" rx="8"/><rect x="133" y="152" width="6" height="60"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Shortsmith home"><svg aria-hidden="true"><use href="#logo"/></svg>Shortsmith</a>
+    <nav aria-label="Sections"><a href="#how">How it works</a><a href="#captions">Captions</a><a href="#reframe">Reframe</a><a href="#discover">Discover</a><a href="#faq">FAQ</a></nav>
+    <a class="btn small primary cta" href="#get"><svg aria-hidden="true"><use href="#win"/></svg><span class="lbl-long">Download for Windows</span></a>
+  </div>
+</header>
+
+<main id="top">
+<!-- ───────── HERO ───────── -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow"><b>●</b> AI auto-clipper for Windows</div>
+      <h1>Long videos in. <span class="out grad-text">Viral shorts out.</span></h1>
+      <p class="lede">Paste a YouTube, Twitch or podcast link. Shortsmith finds the moments people replay, reframes them to 9:16 around whoever is talking, and burns in word-perfect animated captions. All on your own PC.</p>
+      <div class="hero-ctas">
+        <a class="btn primary" href="#get"><svg aria-hidden="true"><use href="#win"/></svg>Download for Windows</a>
+        <a class="btn" href="#how">See how it works</a>
+      </div>
+      <div class="hero-meta"><span>Windows 10 &amp; 11</span><span>Runs locally</span><span>NVIDIA GPU optional</span><span>1080×1920 export</span></div>
+    </div>
+
+    <div class="machine" aria-label="Animated example: a long podcast timeline with three highlighted moments that become vertical clips">
+      <div class="source">
+        <div class="source-h"><span class="t">The Long Table Podcast · Ep. 214</span><span>01:42:10 · 1080p</span></div>
+        <div class="track" id="track"><canvas id="wave"></canvas></div>
+        <div class="ticks"><span>00:00</span><span>25:00</span><span>50:00</span><span>1:15:00</span><span>1:42:10</span></div>
+      </div>
+      <div class="phones" id="heroPhones"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── HOW ───────── -->
+<section id="how" class="band">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">How it works</div>
+      <h2>One link. Four steps. <span class="grad-text">Zero timeline scrubbing.</span></h2>
+      <p class="lede">Every clip goes through the same pipeline you would do by hand, minus the two hours in an editor.</p>
+    </div>
+    <div class="pipe">
+      <div class="step" style="--i:0"><span class="tc">STEP 1 · IMPORT</span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div><h3>Paste a link or drop a file</h3><p>YouTube, TikTok, Twitch, X, Vimeo or a local MP4. Up to 4K source, or several links at once to queue them.</p><div class="bar"><i></i></div></div>
+      <div class="step" style="--i:1"><span class="tc">STEP 2 · TRANSCRIBE</span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg></div><h3>Every word, timestamped</h3><p>Whisper speech recognition with word-level timing and proper punctuation, in 90+ languages.</p><div class="bar"><i></i></div></div>
+      <div class="step" style="--i:2"><span class="tc">STEP 3 · FIND MOMENTS</span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div><h3>Scores the whole video</h3><p>Ranks every possible clip by hook, payoff, energy and audience replays, then cuts on real sentence boundaries.</p><div class="bar"><i></i></div></div>
+      <div class="step" style="--i:3"><span class="tc">STEP 4 · CREATE CLIPS</span><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M10 15h4"/></svg></div><h3>Reframed, captioned, done</h3><p>9:16 at 1080×1920 with animated captions, loudness normalized and ready to upload.</p><div class="bar"><i></i></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── MOMENTS ───────── -->
+<section id="moments">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow">Moment detection</div>
+      <h2 style="margin-top:14px">It knows which 40 seconds <span class="grad-text">people actually replay.</span></h2>
+      <p class="lede" style="margin-top:16px">Shortsmith reads the whole transcript and listens to the audio, then scores every candidate clip from 0 to 100. Clips start on a hook and end after the payoff, with intro music and dead air trimmed off.</p>
+      <div class="signals">
+        <div class="signal"><b>Hook</b><span>Questions, bold claims and "here's why" openers in the first sentence.</span></div>
+        <div class="signal"><b>Energy</b><span>Loudness peaks, laughter and fast delivery compared to the rest of the video.</span></div>
+        <div class="signal"><b>Replays</b><span>YouTube's most-replayed data, when the video has it.</span></div>
+        <div class="signal"><b>Claude AI</b><span>Optional. Add an Anthropic API key and Claude picks moments and writes titles and hashtags.</span></div>
+      </div>
+    </div>
+    <div class="clips-card" aria-label="Example ranked clips">
+      <div class="clip-row"><div class="mini-phone" style="--mp:linear-gradient(160deg,#3b2a6e,#14111f)"></div><div><div class="ti">Nobody tells you this about your first hire</div><div class="why">Strong opening hook · Sparks curiosity · Lands a payoff</div><div class="tc">12:31 → 13:06 · 35s</div></div><span class="flame hot"><svg aria-hidden="true"><use href="#flame"/></svg>98</span></div>
+      <div class="clip-row"><div class="mini-phone" style="--mp:linear-gradient(160deg,#5b1f43,#14111f)"></div><div><div class="ti">"I was three weeks from losing the house"</div><div class="why">High-energy delivery · Emotional language</div><div class="tc">41:02 → 41:49 · 47s</div></div><span class="flame hot"><svg aria-hidden="true"><use href="#flame"/></svg>94</span></div>
+      <div class="clip-row"><div class="mini-phone" style="--mp:linear-gradient(160deg,#1f3b5b,#14111f)"></div><div><div class="ti">The 2am rule that fixed my sleep</div><div class="why">Most-replayed moment · Fast-paced</div><div class="tc">1:07:44 → 1:08:12 · 28s</div></div><span class="flame hot"><svg aria-hidden="true"><use href="#flame"/></svg>91</span></div>
+      <div class="clip-row"><div class="mini-phone" style="--mp:linear-gradient(160deg,#2a4a2f,#14111f)"></div><div><div class="ti">Why most advice about money is backwards</div><div class="why">Strong opening hook · Complete thought</div><div class="tc">1:31:10 → 1:31:52 · 42s</div></div><span class="flame"><svg aria-hidden="true"><use href="#flame"/></svg>86</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── CAPTIONS ───────── -->
+<section id="captions" class="band">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">Animated captions</div>
+      <h2>Twelve caption styles. <span class="grad-text">Every word on beat.</span></h2>
+      <p class="lede">Captions are timed to each spoken word, so the highlight lands exactly when it's said. Pick a style below to see it. In the app you can also change the font, size, colors, outline, position and animation, or fix any word and re-render in seconds.</p>
+    </div>
+    <div class="studio">
+      <div class="phone" id="studioPhone"></div>
+      <div>
+        <div class="styles" id="styles" role="group" aria-label="Caption styles"></div>
+        <div class="studio-meta"><span class="tag">14 fonts</span><span class="tag">word-level timing</span><span class="tag">pop · bounce · fade · slide</span><span class="tag">color · pill · karaoke highlight</span><span class="tag">.srt export</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── REFRAME ───────── -->
+<section id="reframe">
+  <div class="wrap split">
+    <div>
+      <div class="eyebrow">Smart reframe</div>
+      <h2 style="margin-top:14px">Landscape in, <span class="grad-text">perfectly framed</span> vertical out.</h2>
+      <p class="lede" style="margin-top:16px">Face tracking follows whoever is on screen with a smooth virtual camera that only moves when it has to. Two people far apart get a split screen. Slides and b-roll get the full frame over a blurred background, so nothing is cut off.</p>
+    </div>
+    <div>
+      <div class="modes" role="group" aria-label="Reframe mode">
+        <button type="button" data-mode="track" aria-pressed="true">Track speaker</button>
+        <button type="button" data-mode="split" aria-pressed="false">Split screen</button>
+        <button type="button" data-mode="fit" aria-pressed="false">Fit + blur</button>
+      </div>
+      <div class="frame16" id="frame16">
+        <svg class="person a" viewBox="0 0 200 220" aria-hidden="true"><use href="#host"/></svg>
+        <svg class="person b" viewBox="0 0 200 220" aria-hidden="true"><use href="#host"/></svg>
+        <div class="facebox" style="left:25.3%"></div>
+        <div class="facebox" style="left:65.3%"></div>
+        <div class="crop track" id="crop"></div>
+      </div>
+      <div class="out916">
+        <div class="phone" id="outPhone"></div>
+        <p id="modeText">The crop window glides to the active speaker and holds still between moves, so the shot never jitters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── DISCOVER ───────── -->
+<section id="discover" class="band">
+  <div class="wrap">
+    <div class="disc-head">
+      <div class="sec-head" style="margin-bottom:0">
+        <div class="eyebrow">Discover</div>
+        <h2>Never wonder <span class="grad-text">what to clip next.</span></h2>
+        <p class="lede">Every time you open the app, Discover scans 60+ popular podcasts, streamers and creators plus trending YouTube searches. You get around 450 long-form videos with real momentum, ranked by clip potential. Hover one and press Clip it.</p>
+      </div>
+    </div>
+    <div class="chips" aria-hidden="true"><span class="chip on">For you</span><span class="chip">Trending</span><span class="chip">Just posted</span><span class="chip">All-time hits</span><span class="chip">Podcasts</span><span class="chip">Interviews</span><span class="chip">Comedy</span><span class="chip">Streamers</span><span class="chip">Saved</span><span class="chip">My creators</span></div>
+    <div class="vgrid" id="vgrid" aria-label="Example recommendations"></div>
+    <div class="formula" aria-label="How the clip score is weighted">
+      <div><b>38%</b><span>Momentum: views per day since upload</span></div>
+      <div><b>18%</b><span>Freshness: new uploads ride the trend</span></div>
+      <div><b>17%</b><span>Popularity: total views</span></div>
+      <div><b>15%</b><span>Length sweet spot: 20 to 150 minutes</span></div>
+      <div><b>12%</b><span>Category: talk-heavy content clips best</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── EXTRAS ───────── -->
+<section id="more">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="eyebrow">The details</div>
+      <h2>Built for people who clip <span class="grad-text">every day.</span></h2>
+    </div>
+    <div class="extras">
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><h3>GPU acceleration</h3><p>One click installs NVIDIA support. The most accurate speech model transcribes a 14-minute talk in about a minute on an RTX 3050.</p></div>
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><h3>Edit, then re-render</h3><p>Fix any caption word, swap styles, nudge the start and end, or change the reframe mode. Re-renders take seconds.</p></div>
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg><h3>Queue and walk away</h3><p>Paste several links or press Clip it on a few Discover picks. They run one after another, with progress on your taskbar.</p></div>
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg><h3>Platform-ready audio</h3><p>Every clip is mastered to −14 LUFS, the loudness TikTok, Shorts and Reels play at.</p></div>
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg><h3>Export your way</h3><p>Save all clips to a folder, copy titles and hashtags, export captions as .srt, or jump to the original at the clip's timestamp.</p></div>
+      <div class="extra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><h3>Private by design</h3><p>Video, audio and transcription stay on your PC. An optional API key is encrypted with Windows DPAPI.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── SPECS + FAQ ───────── -->
+<section id="faq" class="band">
+  <div class="wrap split" style="align-items:start">
+    <div>
+      <div class="eyebrow">Specs</div>
+      <h2 style="margin:14px 0 26px">What you need.</h2>
+      <div style="overflow-x:auto">
+      <table class="specs">
+        <tr><th scope="row">System</th><td>Windows 10 or 11, 64-bit</td></tr>
+        <tr><th scope="row">Memory</th><td>8 GB RAM, 16 GB recommended</td></tr>
+        <tr><th scope="row">GPU</th><td>Optional. Any NVIDIA card with CUDA 12 for faster transcription and NVENC encoding</td></tr>
+        <tr><th scope="row">Disk</th><td>About 500 MB for the app, plus a speech model of 145 MB to 1.6 GB</td></tr>
+        <tr><th scope="row">Sources</th><td>YouTube, TikTok, Twitch, X, Vimeo, Instagram, local <code>.mp4 .mov .mkv .webm</code></td></tr>
+        <tr><th scope="row">Output</th><td><code>1080×1920</code> or <code>720×1280</code> H.264, AAC 192 kbps, −14 LUFS</td></tr>
+        <tr><th scope="row">Languages</th><td>90+ with automatic detection</td></tr>
+      </table>
+      </div>
+    </div>
+    <div class="faq">
+      <div class="eyebrow">FAQ</div>
+      <h2 style="margin:14px 0 26px">Questions.</h2>
+      <details><summary>Does it upload my videos anywhere?</summary><p>No. Downloading, transcription, reframing and rendering all happen on your computer. The only optional exception is Claude AI mode, which sends the transcript text to Anthropic to pick moments.</p></details>
+      <details><summary>Do I need a graphics card?</summary><p>No. Everything runs on the CPU. With an NVIDIA GPU, transcription is several times faster and encoding uses NVENC.</p></details>
+      <details><summary>How accurate are the captions?</summary><p>You choose between four accuracy levels, up to Whisper large-v3-turbo. Words are individually timed, punctuated and capitalized, and any word can be corrected before re-rendering.</p></details>
+      <details><summary>How long does a video take?</summary><p>A 14-minute talk became four finished clips in about a minute and a half on a mid-range PC, including the download. Longer videos scale with their length.</p></details>
+      <details><summary>Can I clip any video I find?</summary><p>Only clip videos you have the rights to use, or that the creator allows. Many podcasts and streamers run official clipping programs, and those are a good place to start.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── FINAL CTA ───────── -->
+<section class="final" id="get">
+  <div class="wrap">
+    <div class="final-card">
+      <div>
+        <div class="eyebrow">Shortsmith 1.0</div>
+        <h2 style="margin-top:14px">Your next 10 shorts are <span class="grad-text">already in that podcast.</span></h2>
+      </div>
+      <div class="dl">
+        <a class="btn primary" id="dlBtn" href="#get"><svg aria-hidden="true"><use href="#win"/></svg><span id="dlLabel">Download for Windows</span></a>
+        <span class="file">Shortsmith-win64.zip · 195 MB · v1.0.0</span>
+        <p class="note" id="dlNote">Unzip anywhere and run Shortsmith.exe. The speech model downloads on first use.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Shortsmith · <a href="https://github.com/AniEEEEeee/shortsmith">GitHub</a> · <a href="https://github.com/AniEEEEeee/shortsmith/blob/main/THIRD-PARTY-NOTICES.txt">Licenses</a></span>
+    <span>Speech by Whisper · video by FFmpeg · fonts under the SIL Open Font License</span>
+  </div>
+</footer>
+
+<script>
+/* Set this to wherever the zip is hosted (e.g. a GitHub release asset). */
+const DOWNLOAD_URL = "https://github.com/AniEEEEeee/shortsmith/releases/latest/download/Shortsmith-win64.zip";
+
+(function () {
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* download button */
+  const dl = $("#dlBtn");
+  if (DOWNLOAD_URL) { dl.href = DOWNLOAD_URL; dl.rel = "noopener"; }
+  else {
+    dl.setAttribute("aria-disabled", "true"); $("#dlLabel").textContent = "Download coming soon";
+    dl.addEventListener("click", (e) => e.preventDefault());
+  }
+
+  /* caption styles (same presets as the app) */
+  const BASE = { font: "Montserrat", weight: 900, size: 92, upper: true, text: "#FFFFFF", hl: "#FFE135", mode: "color", scale: 1.12,
+    outline: "#000000", ow: 7, shadow: 3, box: false, boxColor: "0,0,0", boxA: .7, glow: false, anim: "pop", words: 3, y: .7, emph: false, tilt: 0, spacing: 0 };
+  const STYLES = [
+    ["Bold Pop", {}],
+    ["Hype", { font: "Anton", weight: 400, size: 120, hl: "#3CFF5A", ow: 6, shadow: 0, words: 2, anim: "bounce", scale: 1.18 }],
+    ["Spotlight", { weight: 800, size: 84, mode: "pill", hl: "#7C5CFF", ow: 5, shadow: 0, anim: "pop", scale: 1 }],
+    ["Karaoke", { font: "Poppins", weight: 800, size: 80, upper: false, mode: "fill", hl: "#2EE6FF", ow: 6, shadow: 2, words: 4, anim: "fade" }],
+    ["Clean", { font: "Inter", weight: 800, size: 70, upper: false, mode: "none", ow: 0, shadow: 6, words: 5, anim: "fade", y: .74 }],
+    ["Boxed", { font: "Archivo Black", weight: 400, size: 66, upper: false, hl: "#FFD60A", box: true, boxColor: "10,10,10", boxA: .78, ow: 0, shadow: 0, words: 4, anim: "slide", scale: 1 }],
+    ["Comic", { font: "Bangers", weight: 400, size: 104, text: "#FFE135", hl: "#FF3B5C", ow: 8, shadow: 5, words: 2, anim: "bounce", tilt: -3, spacing: 2 }],
+    ["Neon", { font: "Lilita One", weight: 400, size: 100, text: "#FFE4FB", hl: "#7DF9FF", outline: "#FF3CF2", ow: 4, shadow: 0, glow: true, words: 2, anim: "pop" }],
+    ["One Word", { font: "Luckiest Guy", weight: 400, size: 128, mode: "none", ow: 9, shadow: 4, words: 1, anim: "bounce", emph: true, hl: "#3CFF5A", y: .62 }],
+    ["Tall", { font: "Bebas Neue", weight: 400, size: 140, hl: "#FF8A00", ow: 6, shadow: 0, words: 3, anim: "slide", spacing: 3, scale: 1.08 }],
+    ["Marker", { font: "Permanent Marker", weight: 400, size: 82, upper: false, hl: "#FFE135", ow: 6, shadow: 3, words: 3, anim: "fade", scale: 1, tilt: -2 }],
+    ["Podcast", { font: "Rubik", weight: 800, size: 78, upper: false, hl: "#38BDF8", ow: 0, shadow: 0, box: true, boxA: .55, words: 4, anim: "pop", scale: 1, y: .5 }],
+  ].map(([name, s]) => ({ name, ...BASE, ...s }));
+  const EMPH = new Set(["nobody", "never", "everything", "changed", "live", "actually", "first", "best", "secret"]);
+
+  function scene(hue) {
+    return `<div class="scene" style="background:radial-gradient(60% 40% at 30% 18%, hsla(${hue},80%,60%,.35), transparent 70%),radial-gradient(50% 35% at 80% 30%, hsla(${(hue + 50) % 360},90%,60%,.25), transparent 70%),linear-gradient(170deg, hsl(${hue},45%,16%), #0a0910 70%)">
+      <svg viewBox="0 0 200 220" aria-hidden="true"><use href="#host"/></svg></div>`;
+  }
+
+  class Captions {
+    constructor(phone, text, style) {
+      this.phone = phone; this.layer = phone.querySelector(".cap-layer");
+      this.words = text.split(" "); this.set(style); this.i = 0; this.last = -1;
+      if (!reduce) this.timer = setInterval(() => this.tick(), 330);
+    }
+    set(style) {
+      this.st = style; this.chunks = [];
+      for (let k = 0; k < this.words.length; k += style.words) this.chunks.push(this.words.slice(k, k + style.words));
+      this.i = 0; this.last = -1; this.render(true);
+    }
+    tick() { const total = this.words.length; this.i = (this.i + 1) % (total + 3); this.render(); }
+    locate() {
+      let k = Math.min(this.i, this.words.length - 1);
+      for (let c = 0; c < this.chunks.length; c++) { if (k < this.chunks[c].length) return [c, k]; k -= this.chunks[c].length; }
+      return [this.chunks.length - 1, 0];
+    }
+    render(force) {
+      const st = this.st, W = this.phone.clientWidth || 200, sc = W / 1080;
+      const [ci, wi] = this.locate();
+      const fresh = force || ci !== this.last; this.last = ci;
+      let line = this.layer.firstElementChild;
+      if (!line || fresh) {
+        this.layer.innerHTML = ""; line = document.createElement("div"); line.className = "cap-line"; this.layer.appendChild(line);
+        const a = { pop: "capPop .1s ease-out", bounce: "capBounce .17s ease-out", fade: "capFade .12s ease-out", slide: "capSlide .14s ease-out" }[st.anim];
+        if (a && !force && !reduce) line.style.animation = a;
+      }
+      const fs = st.size * sc;
+      Object.assign(line.style, { top: st.y * 100 + "%", fontFamily: `"${st.font}", "Arial Black", sans-serif`, fontWeight: st.weight, fontSize: fs + "px",
+        color: st.text, textTransform: st.upper ? "uppercase" : "none", letterSpacing: st.spacing * sc + "px", rotate: st.tilt ? -st.tilt + "deg" : "0deg" });
+      const stroke = st.box || !st.ow ? "" : `-webkit-text-stroke:${st.ow * sc * 2}px ${st.outline};paint-order:stroke fill;`;
+      const shadow = [st.shadow ? `${st.shadow * sc}px ${st.shadow * sc}px 0 rgba(0,0,0,.55)` : "", st.glow ? `0 0 ${24 * sc}px ${st.outline}, 0 0 ${56 * sc}px ${st.outline}` : ""].filter(Boolean).join(",") || "none";
+      const parts = this.chunks[ci].map((w, k) => {
+        const disp = w.replace(/[.,;:!?]+$/, "");
+        let css = stroke + `text-shadow:${shadow};`;
+        if (st.mode === "color" && k === wi) css += `color:${st.hl};font-size:${st.scale}em;`;
+        else if (st.mode === "pill" && k === wi) css += `background:${st.hl};border-radius:.2em;box-shadow:0 0 0 ${0.09 * fs}px ${st.hl};-webkit-text-stroke:0;text-shadow:none;`;
+        else if (st.mode === "fill" && k <= wi) css += `color:${st.hl};`;
+        else if (st.emph && EMPH.has(w.toLowerCase().replace(/[^a-z]/g, ""))) css += `color:${st.hl};`;
+        return `<span class="w" style="${css}">${esc(disp)}</span>`;
+      }).join(" ");
+      line.innerHTML = st.box ? `<span style="background:rgba(${st.boxColor},${st.boxA});padding:${.1 * fs}px ${.3 * fs}px;border-radius:${.18 * fs}px;-webkit-box-decoration-break:clone;box-decoration-break:clone">${parts}</span>` : parts;
+    }
+  }
+
+  function phone(hue, score) {
+    const p = document.createElement("div"); p.className = "phone";
+    p.innerHTML = scene(hue) + `<div class="notch"></div>${score ? `<span class="score"><svg><use href="#flame"/></svg>${score}</span>` : ""}<div class="cap-layer"></div>`;
+    return p;
+  }
+
+  /* hero: timeline + three clips */
+  const CLIPS = [
+    { start: .12, end: .135, c: "#FFE135", tc: "12:31 → 13:06", score: 98, hue: 265, style: 0, text: "Nobody tells you this about your first hire" },
+    { start: .40, end: .418, c: "#c4b5fd", tc: "41:02 → 41:49", score: 94, hue: 320, style: 2, text: "That was the moment everything changed for me" },
+    { start: .663, end: .676, c: "#3CFF5A", tc: "1:07:44 → 1:08:12", score: 91, hue: 200, style: 1, text: "Wait you actually did that live on stream" },
+  ];
+  const track = $("#track");
+  CLIPS.forEach((c, i) => {
+    const s = document.createElement("div"); s.className = "seg";
+    s.style.cssText = `left:${c.start * 100}%;width:${Math.max(2.4, (c.end - c.start) * 100)}%;--c:${c.c}`;
+    s.innerHTML = `<span>#${i + 1} ${c.score}</span>`; track.appendChild(s);
+  });
+  const ph = document.createElement("div"); ph.className = "playhead"; track.appendChild(ph);
+  const hp = $("#heroPhones");
+  const heroCaps = CLIPS.map((c) => {
+    const w = document.createElement("div"); w.className = "phone-wrap"; w.style.setProperty("--c", c.c);
+    const p = phone(c.hue, c.score);
+    w.appendChild(p); w.insertAdjacentHTML("beforeend", `<span class="lab"><i></i>${c.tc}</span>`); hp.appendChild(w);
+    return [p, c];
+  });
+
+  /* waveform */
+  function drawWave() {
+    const cv = $("#wave"), r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    cv.width = r.width * dpr; cv.height = r.height * dpr;
+    const g = cv.getContext("2d"); g.scale(dpr, dpr);
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const bars = Math.floor(r.width / 3), mid = r.height / 2;
+    for (let i = 0; i < bars; i++) {
+      const x = i * 3, t = i / bars;
+      const hot = CLIPS.some((c) => t >= c.start - .004 && t <= c.end + .004);
+      const env = .35 + .35 * Math.sin(t * 37) * Math.sin(t * 11) + (hot ? .35 : 0);
+      const h = Math.max(2, Math.abs(env) * (0.55 + rnd() * .45) * (r.height * .8));
+      g.fillStyle = hot ? "rgba(236,72,153,.95)" : "rgba(167,162,184,.38)";
+      g.fillRect(x, mid - h / 2, 2, h);
+    }
+  }
+
+  /* caption studio */
+  const studio = $("#studioPhone"); studio.replaceWith(phone(275)); const sp = document.querySelector("#captions .phone");
+  const btns = $("#styles");
+  STYLES.forEach((st, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "style-btn"; b.setAttribute("aria-pressed", i === 0 ? "true" : "false");
+    const stroke = st.box || !st.ow ? "" : `-webkit-text-stroke:${Math.min(3.2, st.ow * .42)}px ${st.outline};paint-order:stroke fill;`;
+    const glow = st.glow ? `text-shadow:0 0 8px ${st.outline},0 0 16px ${st.outline};` : st.shadow ? "text-shadow:1.5px 1.5px 0 rgba(0,0,0,.6);" : "";
+    const word = st.upper ? "WOW" : "Wow";
+    const second = st.mode === "pill" ? `<span style="background:${st.hl};border-radius:4px;padding:0 3px">${word.slice(1)}</span>` : `<span style="color:${st.mode === "none" && !st.emph ? st.text : st.hl}">${word.slice(1)}</span>`;
+    const box = st.box ? `background:rgba(${st.boxColor},${st.boxA + .2});padding:3px 8px;border-radius:6px;` : "";
+    b.innerHTML = `<span class="sample" style="font-family:'${st.font}','Arial Black',sans-serif;font-weight:${st.weight};color:${st.text};${stroke}${glow}${box}${st.tilt ? `rotate:${-st.tilt}deg;` : ""}">${word.slice(0, 1)}${second}</span><span class="nm">${st.name}</span>`;
+    b.addEventListener("click", () => { btns.querySelectorAll(".style-btn").forEach((x) => x.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); studioCaps.set(st); });
+    btns.appendChild(b);
+  });
+
+  /* reframe demo */
+  const out = phone(255); $("#outPhone").replaceWith(out);
+  const outLayer = out.querySelector(".scene");
+  const crop = $("#crop"), frame = $("#frame16");
+  const TEXT = {
+    track: "The crop window glides to the active speaker and holds still between moves, so the shot never jitters.",
+    split: "When two people sit far apart, each gets half of the frame and the captions sit on the seam.",
+    fit: "Slides, screens and wide shots keep the whole picture, placed over a blurred copy of itself.",
+  };
+  function setMode(m) {
+    document.querySelectorAll(".modes button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.mode === m ? "true" : "false"));
+    $("#modeText").textContent = TEXT[m];
+    crop.className = "crop" + (m === "track" ? " track" : "");
+    crop.style.opacity = m === "fit" ? "0" : "1";
+    crop.style.left = m === "split" ? "15.3%" : "";
+    frame.querySelectorAll(".crop2").forEach((x) => x.remove());
+    if (m === "split") { const c2 = crop.cloneNode(); c2.classList.add("crop2"); c2.removeAttribute("id"); c2.style.left = "55.3%"; frame.appendChild(c2); }
+    const host = `<svg viewBox="0 0 200 220" style="position:absolute;left:50%;bottom:0;width:92%;transform:translateX(-50%)"><use href="#host"/></svg>`;
+    const bg = "linear-gradient(170deg,#2a1d45,#0a0910 70%)";
+    if (m === "split") outLayer.innerHTML = `<div class="split-view"><div style="background:${bg}">${host}</div><div style="background:linear-gradient(170deg,#45163a,#0a0910 70%)">${host}</div></div>`;
+    else if (m === "fit") outLayer.innerHTML = `<div style="position:absolute;inset:-10%;background:${bg};filter:blur(10px) brightness(.55)"></div><div class="fit-view"><div style="width:100%;aspect-ratio:16/9;background:linear-gradient(160deg,#1d1630,#0d0c14 60%,#2b1124);position:relative;overflow:hidden"><svg viewBox="0 0 200 220" style="position:absolute;left:18%;bottom:0;width:26%"><use href="#host"/></svg><svg viewBox="0 0 200 220" style="position:absolute;left:58%;bottom:0;width:26%"><use href="#host"/></svg></div></div>`;
+    else outLayer.innerHTML = `<div style="position:absolute;inset:0;background:${bg}"></div>${host}`;
+    outCaps.set({ ...STYLES[0], y: m === "split" ? .5 : .74, size: 84 });
+  }
+  document.querySelectorAll(".modes button").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+  /* discover examples (illustrative) */
+  const VIDS = [
+    ["I quit my job to build this. Here's what happened", "The Long Table Podcast", "2:04:12", 98, "1.2M views/day", "Podcasts", 265, "I <em>quit</em>"],
+    ["Three hours with a retired intelligence officer", "Deep Cover Conversations", "3:11:40", 97, "Brand new", "Interviews", 210, "The <em>spy</em> files"],
+    ["We tried every fast food chain in one day", "Weekend Chaos", "41:08", 96, "2.6M views/day", "Entertainment", 20, "<em>24</em> hours"],
+    ["Why every startup stalls at 50 employees", "Founders Unfiltered", "1:28:33", 95, "640K views/day", "Business", 160, "The <em>50</em> wall"],
+    ["Speedrunning the hardest level, live with chat", "PixelRush", "58:21", 94, "910K views/day", "Streamers", 300, "<em>World</em> record?"],
+    ["The debate that took over the internet", "Middle Ground Live", "1:12:05", 93, "New this week", "Debate", 340, "<em>Who</em> wins?"],
+    ["A sleep scientist answers your weirdest questions", "Curious Minds", "1:46:50", 91, "All-time hit", "Science", 230, "Sleep <em>hacks</em>"],
+    ["The comedy roast nobody saw coming", "Late Night Table", "1:33:17", 90, "480K views/day", "Comedy", 45, "<em>Roasted</em>"],
+  ];
+  $("#vgrid").innerHTML = VIDS.map(([t, ch, d, s, m, cat, hue, big]) => `<div class="vcard"><div class="thumb" style="--tb:radial-gradient(60% 80% at 75% 20%, hsla(${hue},85%,60%,.45), transparent 70%),linear-gradient(135deg, hsl(${hue},55%,22%), hsl(${(hue + 40) % 360},50%,10%))">
+    <svg class="who" viewBox="0 0 200 220" aria-hidden="true"><use href="#host"/></svg><span class="big">${big}</span><span class="sc"><svg><use href="#flame"/></svg>${s}</span><span class="dur">${d}</span></div>
+    <div class="tt">${esc(t)}</div><div class="ch">${esc(ch)}</div><div class="meta"><span>${cat}</span><span class="m">${m}</span></div></div>`).join("");
+
+  /* boot */
+  let heroCapObjs = [], studioCaps, outCaps;
+  function start() {
+    drawWave();
+    heroCapObjs = heroCaps.map(([p, c]) => new Captions(p, c.text, STYLES[c.style]));
+    studioCaps = new Captions(sp, "This is how your captions pop on every single clip you make", STYLES[0]);
+    outCaps = new Captions(out, "Framing follows whoever is talking", STYLES[0]);
+    setMode("track");
+  }
+  (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(start);
+  let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { drawWave(); heroCapObjs.forEach((c) => c.render(true)); studioCaps && studioCaps.render(true); outCaps && outCaps.render(true); }, 150); });
+})();
+</script>
+</body>
+</html>

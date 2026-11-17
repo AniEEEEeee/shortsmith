@@ -1,0 +1,51 @@
+Shortsmith - third-party software notices
+===========================================
+
+Shortsmith bundles or downloads the following third-party software. Each component is
+used under its own license; full license texts for bundled fonts and FFmpeg are in the
+"licenses" folder next to this file.
+
+Bundled program
+  - FFmpeg (bin/ffmpeg.exe) - GNU GPL v3. Static "essentials" build by gyan.dev.
+    License: licenses/FFmpeg-LICENSE-GPLv3.txt. Build details and exact source commit:
+    licenses/FFmpeg-build-README.txt. Source code: https://github.com/FFmpeg/FFmpeg
+    FFmpeg runs as a separate program; Shortsmith calls it on the command line.
+
+Bundled libraries (Python)
+  - Python - PSF License 2.0
+  - yt-dlp, yt-dlp-ejs - The Unlicense (yt-dlp-ejs also MIT/ISC parts)
+  - faster-whisper, CTranslate2 - MIT
+  - onnxruntime - MIT
+  - OpenCV (opencv-python-headless) - Apache 2.0; includes FFmpeg libraries under LGPL 2.1
+  - PyAV - BSD 3-Clause; includes FFmpeg libraries under LGPL 2.1
+  - NumPy - BSD 3-Clause (and bundled components under 0BSD/MIT/Zlib)
+  - Pillow - MIT-CMU (HPND)
+  - pywebview - BSD 3-Clause; Microsoft WebView2 SDK - Microsoft license (redistributable)
+  - pythonnet, clr-loader - MIT
+  - tokenizers, huggingface_hub, hf-xet - Apache 2.0
+  - anthropic (Python SDK) - Apache 2.0
+  - requests - Apache 2.0; urllib3, h11, httpx2/httpcore2, anyio, pydantic, jiter - MIT/BSD
+  - certifi - MPL 2.0 (unmodified; source: https://github.com/certifi/python-certifi)
+  - tqdm - MPL 2.0 and MIT (unmodified; source: https://github.com/tqdm/tqdm)
+  - websockets, idna, click, protobuf, pycryptodomex, brotli, flatbuffers - BSD/MIT/Apache
+  - PyInstaller bootloader - GPL v2 with the PyInstaller bootloader exception
+
+Models
+  - YuNet face detector (OpenCV Zoo) - MIT
+  - Whisper speech models (downloaded on first use from Hugging Face) - MIT
+  - Optional NVIDIA GPU pack (cuBLAS, cuDNN, NVRTC; downloaded on request from PyPI) -
+    NVIDIA proprietary license, not redistributed by Shortsmith
+
+Fonts (caption styles and interface)
+  - Montserrat: SIL Open Font License 1.1 (licenses/font-Montserrat-OFL.txt)
+  - Anton: SIL Open Font License 1.1 (licenses/font-Anton-OFL.txt)
+  - Bebas Neue: SIL Open Font License 1.1 (licenses/font-BebasNeue-OFL.txt)
+  - Bangers: SIL Open Font License 1.1 (licenses/font-Bangers-OFL.txt)
+  - Luckiest Guy: Apache License 2.0 (licenses/font-LuckiestGuy-LICENSE.txt)
+  - Poppins: SIL Open Font License 1.1 (licenses/font-Poppins-OFL.txt)
+  - Archivo Black: SIL Open Font License 1.1 (licenses/font-ArchivoBlack-OFL.txt)
+  - Permanent Marker: Apache License 2.0 (licenses/font-PermanentMarker-LICENSE.txt)
+  - Oswald: SIL Open Font License 1.1 (licenses/font-Oswald-OFL.txt)
+  - Inter: SIL Open Font License 1.1 (licenses/font-Inter-OFL.txt)
+  - Lilita One: SIL Open Font License 1.1 (licenses/font-LilitaOne-OFL.txt)
+  - Rubik: SIL Open Font License 1.1 (licenses/font-Rubik-OFL.txt)
